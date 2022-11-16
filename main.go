@@ -1,8 +1,8 @@
-package Avito
+package main
 
 import (
-	"Avito/models"
 	"github.com/gin-gonic/gin"
+	"github.com/scomarae/AvitoTest/models"
 	"net/http"
 )
 
@@ -14,9 +14,9 @@ func main() {
 }
 
 func getBalance(c *gin.Context) { //функция получения баланса пользователя
-	user_id := c.Param("user_id")
+	userId := c.Param("user_id")
 
-	balance := models.GetBalance(user_id)
+	balance := models.GetBalance(userId)
 
 	if balance == nil {
 		c.AbortWithStatus(http.StatusNotFound)

@@ -7,7 +7,7 @@ import (
 )
 
 func GetBalance(userId string) *UserBalance {
-	db, err := sql.Open("mysql", "root:1111@/db")
+	db, err := sql.Open("mysql", "root:1111@/balance_schema")
 	balance := &UserBalance{}
 	if err != nil {
 		fmt.Println("Err", err.Error())
@@ -38,7 +38,7 @@ func GetBalance(userId string) *UserBalance {
 
 func AddBalance(balance UserBalance) {
 
-	db, err := sql.Open("mysql", "root:1111@/db")
+	db, err := sql.Open("mysql", "root:1111@/balance_schema")
 
 	if err != nil {
 		panic(err.Error())
@@ -46,6 +46,7 @@ func AddBalance(balance UserBalance) {
 
 	defer db.Close()
 
+	//здесь будет проверка на то, есть ли уже такой пользователь
 	insert, err := db.Query(
 		"INSERT INTO balance (user_id,balance) VALUES (?,?)",
 		balance.UserId, balance.Balance)

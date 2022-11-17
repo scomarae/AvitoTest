@@ -10,6 +10,8 @@ func main() {
 	router := gin.Default()
 	router.GET("/balance/:user_id", getBalance)
 	router.POST("/balance", addBalance)
+	router.POST("/reserve", reserveBalance)
+	//router.POST("/confirm", confirmBalance)
 	router.Run("localhost:8083")
 }
 
@@ -35,3 +37,26 @@ func addBalance(c *gin.Context) { //функция начисления бала
 		c.IndentedJSON(http.StatusCreated, balance)
 	}
 }
+
+func reserveBalance(c *gin.Context) { //функция резервирования баланса
+	var rbalance models.Reserve
+
+	//нужна еще проверка на то, есть ли такой пользователь?
+	if err := c.BindJSON(&rbalance); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	} else {
+		models.ReserveBalance(rbalance)
+		c.IndentedJSON(http.StatusCreated, rbalance)
+	}
+}
+
+//func confirmBalance(c *gin.Context) { //
+//	var confirm models.Confirm
+//
+//	if err := c.BindJSON(&confirm); err != nil {
+//		c.AbortWithStatus(http.StatusBadRequest)
+//	} else {
+//		models.ConfirmBalance(confirm)
+//		c.IndentedJSON(http.StatusCreated, confirm)
+//	}
+//}

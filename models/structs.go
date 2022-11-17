@@ -18,3 +18,10 @@ type Report struct {
 	PurchaseId string  `json:"purchase_id"`
 	Price      float64 `json:"price"`
 }
+
+type Confirm struct {
+	UserId     string  `json:"user_id"`
+	ServiceId  string  `json:"service_id"`
+	PurchaseId string  `json:"purchase_id"`
+	Price      float64 `json:"price"`
+}

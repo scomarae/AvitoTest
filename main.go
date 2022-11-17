@@ -9,9 +9,9 @@ import (
 func main() {
 	router := gin.Default()
 	router.GET("/balance/:user_id", getBalance)
-	router.POST("/balance", addBalance)
+	router.POST("/balance", accrualMoneyToBalance)
 	router.POST("/reserve", reserveBalance)
-	//router.POST("/confirm", confirmBalance)
+	router.POST("/confirm", confirmBalance)
 	router.Run("localhost:8083")
 }
 
@@ -27,14 +27,14 @@ func getBalance(c *gin.Context) { //функция получения балан
 	}
 }
 
-func addBalance(c *gin.Context) { //функция начисления баланса
-	var balance models.UserBalance
+func accrualMoneyToBalance(c *gin.Context) { //функция начисления баланса
+	var accrual models.AccrualMoney
 
-	if err := c.BindJSON(&balance); err != nil {
+	if err := c.BindJSON(&accrual); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 	} else {
-		models.AddBalance(balance)
-		c.IndentedJSON(http.StatusCreated, balance)
+		models.AccrualMoneyToBalance(accrual)
+		c.IndentedJSON(http.StatusCreated, accrual)
 	}
 }
 
@@ -46,17 +46,17 @@ func reserveBalance(c *gin.Context) { //функция резервирован�
 		c.AbortWithStatus(http.StatusBadRequest)
 	} else {
 		models.ReserveBalance(rbalance)
-		c.IndentedJSON(http.StatusCreated, rbalance)
+		c.IndentedJSON(http.StatusOK, rbalance)
 	}
 }
 
-//func confirmBalance(c *gin.Context) { //
-//	var confirm models.Confirm
-//
-//	if err := c.BindJSON(&confirm); err != nil {
-//		c.AbortWithStatus(http.StatusBadRequest)
-//	} else {
-//		models.ConfirmBalance(confirm)
-//		c.IndentedJSON(http.StatusCreated, confirm)
-//	}
-//}
+func confirmBalance(c *gin.Context) { //
+	var confirm models.Reserve
+
+	if err := c.BindJSON(&confirm); err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+	} else {
+		models.ConfirmBalance(confirm)
+		c.IndentedJSON(http.StatusOK, confirm)
+	}
+}

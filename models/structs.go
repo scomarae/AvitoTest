@@ -12,14 +12,12 @@ type UserBalance struct {
 	Balance float64 `json:"balance"`
 }
 
-type Report struct {
-	UserId     string  `json:"user_id"`
-	ServiceId  string  `json:"service_id"`
-	PurchaseId string  `json:"purchase_id"`
-	Price      float64 `json:"price"`
+type AccrualMoney struct {
+	UserId string  `json:"user_id"`
+	Amount float64 `json:"amount"`
 }
 
-type Confirm struct {
+type Report struct {
 	UserId     string  `json:"user_id"`
 	ServiceId  string  `json:"service_id"`
 	PurchaseId string  `json:"purchase_id"`

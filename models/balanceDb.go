@@ -4,10 +4,29 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 )
 
+const userdb = "root"
+const passworddb = "1111"
+const conn = "@tcp(localhost:3306)"
+
+func IsUserExists(userId string, db *sql.DB) bool {
+
+	results, err := db.Query("SELECT * FROM balance where user_id=?", userId)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if results != nil {
+		return true
+	}
+	return false
+}
+
 func GetBalance(userId string) *UserBalance {
-	db, err := sql.Open("mysql", "root:1111@tcp(localhost:3306)/balance_schema")
+	db, err := sql.Open("mysql", userdb+":"+passworddb+conn+"/balance_schema")
 	balance := &UserBalance{}
 	if err != nil {
 		fmt.Println("Err", err.Error())
@@ -36,41 +55,61 @@ func GetBalance(userId string) *UserBalance {
 	return balance
 }
 
-func AddBalance(balance UserBalance) {
+func AccrualMoneyToBalance(accrual AccrualMoney) {
 
-	db, err := sql.Open("mysql", "root:1111@tcp(localhost:3306)/balance_schema")
+	db, err := sql.Open("mysql", userdb+":"+passworddb+conn+"/balance_schema")
 
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
 	}
 
-	defer db.Close()
-
-	results, err := db.Query("SELECT * FROM balance where id=?", balance.UserId)
-
-	if results != nil {
-		//тут меняем баланс существующего пользователя
-		update, err := db.Query(
-			"UPDATE balance SET user_balance +=? WHERE user_id=?",
-			balance.Balance, balance.UserId)
-		if err != nil {
-			panic(err.Error())
-		}
-		defer update.Close()
-	} else {
+	if IsUserExists(accrual.UserId, db) {
 		//если человека с отправленным id еще нет в базе, добавляем
 		insert, err := db.Query(
 			"INSERT INTO balance (user_id,user_balance) VALUES (?,?)",
-			balance.UserId, balance.Balance)
+			accrual.Amount, accrual.UserId)
 		if err != nil {
 			panic(err.Error())
 		}
 		defer insert.Close()
+	} else {
+		//тут к старому значению баланса прибавляем полученное значение
+		update, err := db.Query(
+			"UPDATE balance SET user_balance = user_balance +? WHERE user_id=?",
+			accrual.Amount, accrual.UserId)
+		if err != nil {
+			panic(err.Error())
+		}
+		defer update.Close()
 	}
 
 }
 
-func ReserveBalance(rbalance Reserve) {
+func ReserveBalance(reserve Reserve) {
+	db, err := sql.Open("mysql", userdb+":"+passworddb+conn+"/balance_schema")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer db.Close()
+
+	if IsUserExists(reserve.UserId, db) {
+		insert, err := db.Query(
+			"INSERT INTO reserve(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
+			reserve.UserId, reserve.ServiceId, reserve.PurchaseId, reserve.Price)
+		log.Fatal(err)
+		defer insert.Close()
+	}
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+}
+
+func ConfirmBalance(confirm Reserve) {
+	var user_balance float64
 	db, err := sql.Open("mysql", "root:1111@tcp(localhost:3306)/balance_schema")
 
 	if err != nil {
@@ -79,46 +118,29 @@ func ReserveBalance(rbalance Reserve) {
 
 	defer db.Close()
 
-	insert, err := db.Query(
-		"INSERT INTO reserve(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
-		rbalance.UserId, rbalance.ServiceId, rbalance.PurchaseId, rbalance.Price)
+	balance_res := db.QueryRow("SELECT user_balance FROM balance where user_id=?", confirm.UserId)
+	err = balance_res.Scan(&user_balance)
+	if user_balance >= confirm.Price { //как поменять получаемый тип из строки?
+		update, err := db.Query(
+			"UPDATE balance SET user_balance = user_balance -? WHERE user_id=?",
+			confirm.Price, confirm.UserId)
+		del, err := db.Query(
+			"DELETE FROM reserve WHERE (purchase_id = ?)",
+			confirm.PurchaseId)
+		rep_ins, err := db.Query(
+			"INSERT INTO report(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
+			confirm.UserId, confirm.ServiceId, confirm.PurchaseId, confirm.Price)
+		if err != nil {
+			panic(err.Error())
+		}
+		defer update.Close()
+		defer del.Close()
+		defer rep_ins.Close()
+
+	}
 
 	if err != nil {
 		panic(err.Error())
 	}
 
-	defer insert.Close()
 }
-
-//func ConfirmBalance(confirm Confirm) {
-//	db, err := sql.Open("mysql", "root:1111@tcp(localhost:3306)/balance_schema")
-//
-//	if err != nil {
-//		panic(err.Error())
-//	}
-//
-//	defer db.Close()
-//
-//	balance_res, err := db.Query("SELECT balance FROM balance where id=?", confirm.UserId)
-//
-//	if balance_res >= confirm.Price { //как поменять получаемый тип из строки?
-//		insert, err := db.Query(
-//			"INSERT INTO confirm(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
-//			confirm.UserId, confirm.ServiceId, confirm.PurchaseId, confirm.Price)
-//		del, err := db.Query(
-//			"DELETE FROM reserve WHERE (purchase_id = ?)",
-//			confirm.PurchaseId)
-//		rep_ins, err := db.Query(
-//			"INSERT INTO report(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
-//			confirm.UserId, confirm.ServiceId, confirm.PurchaseId, confirm.Price)
-//
-//		defer insert.Close()
-//		defer del.Close()
-//		defer rep_ins.Close()
-//	}
-//
-//	if err != nil {
-//		panic(err.Error())
-//	}
-//
-//}

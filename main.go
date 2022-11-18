@@ -8,10 +8,10 @@ import (
 
 func main() {
 	router := gin.Default()
-	router.GET("/balance/:user_id", getBalance)
-	router.POST("/balance", accrualMoneyToBalance)
-	router.POST("/reserve", reserveBalance)
-	router.POST("/confirm", confirmTransaction)
+	router.GET("/balance/:user_id", getBalance)    //получение баланса ползователя по id
+	router.POST("/balance", accrualMoneyToBalance) //начисление баланса
+	router.POST("/reserve", reserveBalance)        //резервирование баланса
+	router.POST("/confirm", confirmTransaction)    //подтверждение транзакции
 	router.Run("localhost:8083")
 }
 

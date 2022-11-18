@@ -67,7 +67,7 @@ func AccrualMoneyToBalance(accrual AccrualMoney) {
 		//если человека с отправленным id еще нет в базе, добавляем
 		insert, err := db.Query(
 			"INSERT INTO balance (user_id,user_balance) VALUES (?,?)",
-			accrual.Amount, accrual.UserId)
+			accrual.UserId, accrual.Amount)
 		if err != nil {
 			panic(err.Error())
 		}

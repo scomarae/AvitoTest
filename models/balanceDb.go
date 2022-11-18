@@ -60,7 +60,7 @@ func AccrualMoneyToBalance(accrual AccrualMoney) {
 	db, err := sql.Open("mysql", userdb+":"+passworddb+conn+"/balance_schema")
 
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
 
 	if IsUserExists(accrual.UserId, db) {
@@ -95,49 +95,45 @@ func ReserveBalance(reserve Reserve) {
 	defer db.Close()
 
 	if IsUserExists(reserve.UserId, db) {
-		insert, err := db.Query(
-			"INSERT INTO reserve(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
-			reserve.UserId, reserve.ServiceId, reserve.PurchaseId, reserve.Price)
-		log.Fatal(err)
-		defer insert.Close()
-	}
+		var user_balance float64
+		balance_res := db.QueryRow("SELECT user_balance FROM balance where user_id=?", reserve.UserId)
+		err = balance_res.Scan(&user_balance)
+		if user_balance >= reserve.Price {
+			update, err := db.Query(
+				"UPDATE balance SET user_balance = user_balance -? WHERE user_id=?",
+				reserve.Price, reserve.UserId)
+			defer update.Close()
+			insert, err := db.Query(
+				"INSERT INTO reserve(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
+				reserve.UserId, reserve.ServiceId, reserve.PurchaseId, reserve.Price)
+			defer insert.Close()
+			if err != nil {
+				panic(err.Error())
+			}
+		}
 
-	if err != nil {
-		panic(err.Error())
 	}
-
 }
 
-func ConfirmBalance(confirm Reserve) {
-	var user_balance float64
-	db, err := sql.Open("mysql", "root:1111@tcp(localhost:3306)/balance_schema")
+func ConfirmTransaction(confirm Reserve) {
+	db, err := sql.Open("mysql", userdb+":"+passworddb+conn+"/balance_schema")
 
 	if err != nil {
 		panic(err.Error())
 	}
 
 	defer db.Close()
-
-	balance_res := db.QueryRow("SELECT user_balance FROM balance where user_id=?", confirm.UserId)
-	err = balance_res.Scan(&user_balance)
-	if user_balance >= confirm.Price { //как поменять получаемый тип из строки?
-		update, err := db.Query(
-			"UPDATE balance SET user_balance = user_balance -? WHERE user_id=?",
-			confirm.Price, confirm.UserId)
-		del, err := db.Query(
-			"DELETE FROM reserve WHERE (purchase_id = ?)",
-			confirm.PurchaseId)
-		rep_ins, err := db.Query(
-			"INSERT INTO report(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
-			confirm.UserId, confirm.ServiceId, confirm.PurchaseId, confirm.Price)
-		if err != nil {
-			panic(err.Error())
-		}
-		defer update.Close()
-		defer del.Close()
-		defer rep_ins.Close()
-
+	del, err := db.Query(
+		"DELETE FROM reserve WHERE (purchase_id = ?)",
+		confirm.PurchaseId)
+	rep_ins, err := db.Query(
+		"INSERT INTO report(user_id,service_id,purchase_id,price) VALUES (?,?,?,?)",
+		confirm.UserId, confirm.ServiceId, confirm.PurchaseId, confirm.Price)
+	if err != nil {
+		panic(err.Error())
 	}
+	defer del.Close()
+	defer rep_ins.Close()
 
 	if err != nil {
 		panic(err.Error())

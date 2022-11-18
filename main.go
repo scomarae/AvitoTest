@@ -11,7 +11,7 @@ func main() {
 	router.GET("/balance/:user_id", getBalance)
 	router.POST("/balance", accrualMoneyToBalance)
 	router.POST("/reserve", reserveBalance)
-	router.POST("/confirm", confirmBalance)
+	router.POST("/confirm", confirmTransaction)
 	router.Run("localhost:8083")
 }
 
@@ -40,8 +40,6 @@ func accrualMoneyToBalance(c *gin.Context) { //функция начислени
 
 func reserveBalance(c *gin.Context) { //функция резервирования баланса
 	var rbalance models.Reserve
-
-	//нужна еще проверка на то, есть ли такой пользователь?
 	if err := c.BindJSON(&rbalance); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 	} else {
@@ -50,13 +48,13 @@ func reserveBalance(c *gin.Context) { //функция резервирован�
 	}
 }
 
-func confirmBalance(c *gin.Context) { //
+func confirmTransaction(c *gin.Context) { //функция признания выручки
 	var confirm models.Reserve
 
 	if err := c.BindJSON(&confirm); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 	} else {
-		models.ConfirmBalance(confirm)
+		models.ConfirmTransaction(confirm)
 		c.IndentedJSON(http.StatusOK, confirm)
 	}
 }
